@@ -1,0 +1,150 @@
+ *PROCESS DBG(arg_count); 
+ leven: procedure(parm) options(main);
+
+  dcl parm     char(100) varying;   
+  dcl (s1, s2) char(256) varying; /* adjust length as needed */
+  dcl (m, n, i, j) fixed bin(31);
+  dcl (cost, distance, min_distance) fixed bin(31); 
+  dcl comparisons fixed bin(31);
+  dcl prev(0:256) fixed bin(31); /* adjust array size as needed */
+  dcl curr(0:256) fixed bin(31); /* adjust array size as needed */
+  dcl arg(10) char(256) varying; /* array to hold command line args. */
+  dcl arg_count fixed bin(31) init(0);  
+  dcl sysprint file stream output;
+
+     
+  
+  /* PL/I one can have a single string as 
+  parameter. It must be cut first in  2*/   
+  call substring_extractor(parm); 
+  put skip list("New Version");
+  put skip data(arg_count);
+  put skip data(arg(1), arg(2));
+  if arg_count < 2 then do;    
+    put skip list('usage: program_name <string1> <string2> ...');
+    return;
+  end;
+
+  min_distance = 2**30; /* equivalent to long.max_value */
+  comparisons = 0;
+
+  do i = 1 to arg_count;
+    do j = 1 to arg_count;	  
+      if ((i < j) | (i > j) | (j < i) | (j > i)) then do; /*NOT sign */
+        s1 = arg(i);
+        s2 = arg(j);		
+        distance = levenshtein_distance(s1, s2);
+        min_distance = min(min_distance, distance);
+		    put skip data(distance,min_distance);
+        comparisons = comparisons + 1;
+      end;
+    end;
+  end;
+
+  put skip list('times: ' || comparisons);
+  put skip list('min_distance: ' || min_distance);
+
+  return;
+
+ levenshtein_distance: procedure(s1, s2) returns(fixed bin(31));
+  dcl (s1, s2, tempi) char(256) varying;
+  dcl (m, n, i, j) fixed bin(31);
+  dcl cost fixed bin(31);
+  dcl prev(m) controlled fixed bin(31);
+  dcl curr(m) controlled fixed bin(31);
+  dcl temp(m) controlled fixed bin(31);
+
+      
+  if length(s1) > length(s2) then do;
+    tempi = s1;
+    s1 = s2;
+    s2 = tempi;
+  end;
+  
+  m = length(s1);
+  n = length(s2);
+
+  allocate prev;
+  allocate curr;
+  allocate temp;
+  
+  do j = 0 to m;
+    prev(j) = j;
+  end;
+  
+  do i = 1 to n;
+    curr(1) = i;
+	
+    do j = 1 to m;
+      if substr(s1, j, 1) = substr(s2, i, 1) then
+        cost = 0;
+      else
+        cost = 1;
+
+      curr(j) = min(min(prev(j) + 1, curr(j - 1) + 1), prev(j - 1) 
+                + cost);
+    end;
+    
+    temp = prev;  
+    prev = curr;
+    curr = temp;
+  end;  
+  return(prev(m));
+
+ end levenshtein_distance;
+
+ substring_extractor: procedure(parm);
+  /* this procedure trims 'parm' in several substrings */
+  dcl parm char(100) varying;    
+  dcl i fixed bin(31);
+  /* keep track of current search position */
+  dcl current_pos fixed bin(31) initial(1);   
+  dcl space_pos fixed bin(31);
+  dcl substring_count fixed bin(31) initial(0);
+  dcl temp_parm char(100) varying; /* temporary string for searching */
+
+  /* example parm value - replace with your actual input method */  
+
+  temp_parm = parm; /* initialize temporary string */
+  
+  do while(substring_count < 2);
+    /* find the next space */
+    space_pos = search(temp_parm, ' ');
+
+    if space_pos = 0 then do; /* no more spaces */
+      if length(temp_parm) > 0 then do; /*check for empty string*/
+        substring_count = substring_count + 1;
+        arg(substring_count) = temp_parm;
+      end;
+      leave; /* exit the loop */
+    end;
+    else do;
+      substring_count = substring_count + 1;
+      arg(substring_count) = substr(temp_parm, 1, space_pos - 1);
+
+      /*remove the extracted substring and leading spaces from t_parm*/
+      temp_parm = substr(temp_parm, space_pos);
+      do while (length(temp_parm) > 0 & substr(temp_parm,1,1) = ' ');
+          temp_parm = substr(temp_parm, 2);
+      end;
+    end;
+  end;
+
+  /* output the extracted substrings 
+  put skip list('number of substrings found: ' || substring_count);
+  do i = 1 to substring_count;
+    put skip list('arg(' || i || '): ''' || arg(i) || '''');
+  end;
+  For debugging only
+  */
+
+    /* handle cases with less than two substrings */
+    if substring_count < 2 then do;
+        put skip list('less than two substrings found!');
+    end;
+	
+  arg_count = substring_count; 	
+
+ end substring_extractor;
+ 
+ end leven;

@@ -1,0 +1,105 @@
+ benchmark: proc options(main);
+
+    /* Declare constants for workload size */
+    dcl N fixed bin init(100000);    /* Number of floating-point iterations */
+    dcl M fixed bin init(20);        /* Number of Taylor series terms */
+    dcl P fixed bin init(1000);      /* Outer loop size for integer benchmark */
+    dcl Q fixed bin init(1000);      /* Inner loop size for integer benchmark */
+    dcl delta float init(0.01);      /* Step size for floating-point input */
+
+    /* Variables for results and timing */
+    dcl fp_sum float;                /* Sum of floating-point computations */
+    dcl int_sum fixed bin;           /* Sum of integer computations */
+    dcl start_time char(9);          /* Start time as HHMMSSTTT */
+    dcl end_time char(9);            /* End time as HHMMSSTTT */
+    dcl elapsed float;               /* Elapsed time in milliseconds */
+    dcl i fixed bin;                 /* Loop variable for outer loops */
+    dcl j fixed bin;                 /* Loop variable for inner loop */
+    dcl sysprint file stream output; 
+
+    /* Function to compute sin(x) using Taylor series */
+    taylor_sin: proc(x, terms) returns(float);
+        dcl x float;                 /* Input value */
+        dcl terms fixed bin;         /* Number of terms */
+        dcl sum float;               /* Accumulated sum */
+        dcl term float;              /* Current term */
+        dcl k fixed bin;             /* Loop variable */
+        sum = x;                     /* First term: x */
+        term = x;
+        do k = 1 to terms - 1;
+            term = -term * x**2 / ((2*k) * (2*k + 1));
+            sum = sum + term;
+        end;
+        return(sum); 
+    end taylor_sin;
+
+    /* Function to compute GCD using Euclidean algorithm */
+    gcd: proc(a, b) returns(fixed bin);
+        dcl a fixed bin;             /* First number */
+        dcl b fixed bin;             /* Second number */
+        dcl temp fixed bin;          /* Temporary variable */
+        dcl ok   bit(1) init('1'b);
+        do while(ok);
+            temp = b;
+            b = mod(a, b);
+            a = temp;
+            if b = 0
+            then  
+              ok = '1'b; 
+            else  
+              ok = '0';  
+        end;
+        return(a);
+    end gcd;
+
+    /* Function to convert TIME string to milliseconds since midnight */
+    get_time_ms: proc(time_str) returns(float);
+        dcl time_str char(9);        /* Input time as HHMMSSTTT */
+        dcl hours fixed bin;
+        dcl minutes fixed bin;
+        dcl seconds fixed bin;
+        dcl thousandths fixed bin;
+        hours = substr(time_str, 1, 2);      /* Extract HH */
+        minutes = substr(time_str, 3, 2);    /* Extract MM */
+        seconds = substr(time_str, 5, 2);    /* Extract SS */
+        thousandths = substr(time_str, 7, 3);/* Extract TTT */
+        return ((hours * 3600 + minutes * 60 + seconds) 
+               * 1000 + thousandths);
+    end get_time_ms;
+    
+
+    /* Floating-point benchmark */
+    put skip list('Starting floating-point benchmark...');
+    put skip list('');
+    start_time = time;
+    fp_sum = 0;
+    do i = 1 to N;
+        fp_sum = fp_sum + taylor_sin(i * delta, M);
+    end;
+    end_time = time;
+    elapsed = get_time_ms(end_time) - get_time_ms(start_time);
+    /* Handle midnight wrap */
+    if elapsed < 0 then elapsed = elapsed + 24*3600*1000; 
+    put skip list('Floating-point benchmark took', elapsed, 'ms');
+    put skip list('Sum:', fp_sum);
+    put skip list('');
+
+    /* Integer benchmark */
+    put skip list('Starting integer benchmark...');
+    put skip list('');
+    start_time = time;
+    int_sum = 0;
+    do i = 1 to P;
+        do j = 1 to Q;
+            int_sum = int_sum + gcd(i, j);
+        end;
+    end;
+    end_time = time;
+    elapsed = get_time_ms(end_time) - get_time_ms(start_time);
+    /* Handle midnight wrap */
+    if elapsed < 0 then elapsed = elapsed + 24*3600*1000;  
+    put skip list('Integer benchmark took', elapsed, 'ms');
+    put skip list('Sum:', int_sum);
+    put skip list('');
+
+ end benchmark; 

@@ -1,0 +1,78 @@
+{
+    "version": "2.0.0",
+    "task.autoDetect": "on",
+    "tasks": [
+        {
+            "label": "Compile PL/I",
+            "type": "shell",
+            "command": "plic",
+            "args": [
+                "${input:program}.pli",
+                "-lx -lo -N -S",
+                "-o",                
+                "${input:program}.obj"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/src"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Link Object File",
+            "type": "shell",
+            "command": "ld",
+            "args": [
+                "-L/usr/lib32",
+                "--oformat=elf32-i386",
+                "-melf_i386",
+                "-z",
+                "muldefs",
+                "-Bstatic",
+                "-e",
+                "main",
+                "-t",
+                "-o",
+                "${workspaceFolder}/src/${input:program}.exe",
+                "${workspaceFolder}/src/${input:program}.obj",
+                "-lprf",
+                "-lc",
+                "-g"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/src"
+            },
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Run Executable",
+            "type": "shell",
+            "command": "./${input:program}.exe",
+            "args": [
+                "${input:parmstring}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/src"
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "program",
+            "type": "promptString",
+            "description": "Enter the program name (without extension)",
+            "default": "leven"
+        },
+        {
+            "id": "parmstring",
+            "type": "promptString",
+            "description": "Enter optional parameter string",
+            "default": ""
+        }
+    ]
+}

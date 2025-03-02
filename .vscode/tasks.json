@@ -1,0 +1,70 @@
+{
+    "version": "2.0.0",
+    "task.autoDetect": "on",
+    "tasks": [
+        {
+            "label": "Compile PL/I",
+            "type": "shell",
+            "command": "sh",
+            "args": [
+                "-c",
+                "plic ${fileBasenameNoExtension}.pli -lx -lo -N -S -o ${fileBasenameNoExtension}.obj || { echo \"Compilation failed, opening listing file...\"; code \"${workspaceFolder}/src/${fileBasenameNoExtension}.lst\"; }"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/src"
+            },
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Link Object File",
+            "type": "shell",
+            "command": "ld",
+            "args": [
+                "-L/usr/lib32",
+                "--oformat=elf32-i386",
+                "-melf_i386",
+                "-z",
+                "muldefs",
+                "-Bstatic",
+                "-e",
+                "main",
+                "-t",
+                "-o",
+                "${workspaceFolder}/src/${fileBasenameNoExtension}.exe",
+                "${workspaceFolder}/src/${fileBasenameNoExtension}.obj",
+                "-lprf",
+                "-lc",
+                "-g"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/src"
+            },
+            "problemMatcher": [],
+            "group": "build"
+        },
+        {
+            "label": "Run Executable",
+            "type": "shell",
+            "command": "./${fileBasenameNoExtension}.exe",
+            "args": [
+                "${input:parmstring}"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/src"
+            },
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "parmstring",
+            "type": "promptString",
+            "description": "Enter optional parameter string",
+            "default": ""
+        }
+    ]
+}

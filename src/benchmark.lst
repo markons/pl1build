@@ -1,0 +1,179 @@
+Feb 25, 2025  11:53                         benchmark: proc options(main);                                              
+1.3.2                                               Source Listing                                           Page 1     
+    1  benchmark: proc options(main);
+    2 
+    3     /* Declare constants for workload size */
+    4     dcl N fixed bin init(100000);    /* Number of floating-point iterations */
+    5     dcl M fixed bin init(20);        /* Number of Taylor series terms */
+    6     dcl P fixed bin init(1000);      /* Outer loop size for integer benchmark */
+    7     dcl Q fixed bin init(1000);      /* Inner loop size for integer benchmark */
+    8     dcl delta float init(0.01);      /* Step size for floating-point input */
+    9 
+   10     /* Variables for results and timing */
+   11     dcl fp_sum float;                /* Sum of floating-point computations */
+   12     dcl int_sum fixed bin;           /* Sum of integer computations */
+   13     dcl start_time char(9);          /* Start time as HHMMSSTTT */
+   14     dcl end_time char(9);            /* End time as HHMMSSTTT */
+   15     dcl elapsed float;               /* Elapsed time in milliseconds */
+   16     dcl i fixed bin;                 /* Loop variable for outer loops */
+   17     dcl j fixed bin;                 /* Loop variable for inner loop */
+   18     dcl sysprint file stream output; 
+   19 
+   20     /* Function to compute sin(x) using Taylor series */
+   21     taylor_sin: proc(x, terms) returns(float);
+   22         dcl x float;                 /* Input value */
+   23         dcl terms fixed bin;         /* Number of terms */
+   24         dcl sum float;               /* Accumulated sum */
+   25         dcl term float;              /* Current term */
+   26         dcl k fixed bin;             /* Loop variable */
+   27         sum = x;                     /* First term: x */
+   28         term = x;
+   29         do k = 1 to terms - 1;
+   30             term = -term * x**2 / ((2*k) * (2*k + 1));
+   31             sum = sum + term;
+   32         end;
+   33         return(sum); 
+   34     end taylor_sin;
+   35 
+   36     /* Function to compute GCD using Euclidean algorithm */
+   37     gcd: proc(a, b) returns(fixed bin);
+   38         dcl a fixed bin;             /* First number */
+   39         dcl b fixed bin;             /* Second number */
+   40         dcl temp fixed bin;          /* Temporary variable */
+   41         dcl ok   bit(1) init('1'b);
+   42         do while(ok);
+   43             temp = b;
+   44             b = mod(a, b);
+   45             a = temp;
+   46             if b = 0
+   47             then  
+   48               ok = '1'b; 
+   49             else  
+   50               ok = '0';  
+   51         end;
+   52         return(a);
+   53     end gcd;
+   54 
+   55     /* Function to convert TIME string to milliseconds since midnight */
+   56     get_time_ms: proc(time_str) returns(float);
+   57         dcl time_str char(9);        /* Input time as HHMMSSTTT */
+   58         dcl hours fixed bin;
+Feb 25, 2025  11:53                         benchmark: proc options(main);                                              
+1.3.2                                               Source Listing                                           Page 2     
+   59         dcl minutes fixed bin;
+   60         dcl seconds fixed bin;
+   61         dcl thousandths fixed bin;
+   62         hours = substr(time_str, 1, 2);      /* Extract HH */
+   63         minutes = substr(time_str, 3, 2);    /* Extract MM */
+   64         seconds = substr(time_str, 5, 2);    /* Extract SS */
+   65         thousandths = substr(time_str, 7, 3);/* Extract TTT */
+   66         return ((hours * 3600 + minutes * 60 + seconds) 
+   67                * 1000 + thousandths);
+   68     end get_time_ms;
+   69     
+   70 
+   71     /* Floating-point benchmark */
+   72     put skip list('Starting floating-point benchmark...');
+   73     put skip list('');
+   74     start_time = time;
+   75     fp_sum = 0;
+   76     do i = 1 to N;
+   77         fp_sum = fp_sum + taylor_sin(i * delta, M);
+   78     end;
+   79     end_time = time;
+   80     elapsed = get_time_ms(end_time) - get_time_ms(start_time);
+   81     /* Handle midnight wrap */
+   82     if elapsed < 0 then elapsed = elapsed + 24*3600*1000; 
+   83     put skip list('Floating-point benchmark took', elapsed, 'ms');
+   84     put skip list('Sum:', fp_sum);
+   85     put skip list('');
+   86 
+   87     /* Integer benchmark */
+   88     put skip list('Starting integer benchmark...');
+   89     put skip list('');
+   90     start_time = time;
+   91     int_sum = 0;
+   92     do i = 1 to P;
+   93         do j = 1 to Q;
+   94             int_sum = int_sum + gcd(i, j);
+   95         end;
+   96     end;
+   97     end_time = time;
+   98     elapsed = get_time_ms(end_time) - get_time_ms(start_time);
+   99     /* Handle midnight wrap */
+  100     if elapsed < 0 then elapsed = elapsed + 24*3600*1000;  
+  101     put skip list('Integer benchmark took', elapsed, 'ms');
+  102     put skip list('Sum:', int_sum);
+  103     put skip list('');
+  104 
+Feb 25, 2025  11:53                         benchmark: proc options(main);                                              
+1.3.2                                               Procedure Map                                            Page 3     
+  Offset  Line Statement type             Offset  Line Statement type             Offset  Line Statement type           
+      0C     1 PROCEDURE                BENCHMARK
+      3B     4 DCL                            3B     5 DCL                            3B     6 DCL                      
+      3B     7 DCL                            3B     8 DCL                      
+
+      40    21 PROCEDURE                TAYLOR_SIN
+      57    27 Assignment                     62    28 Assignment                     6D    29 DO                       
+      B2    30 Assignment                   010D    31 Assignment                   011B    32 END                      
+    0126    33 RETURN                       0136    34 END                      
+
+    0146    37 PROCEDURE                GCD
+    015B    41 DCL                          015B    42 DO                           016B    43 Assignment               
+    0175    44 Assignment                   01C8    45 Assignment                   01D2    46 IF                       
+    01E1    48 Assignment                   01E5    49 ELSE                         01EA    50 Assignment               
+    01EE    51 END                          01F6    52 RETURN                       0207    53 END                      
+    020C    53 Initialization           
+
+    0221    56 PROCEDURE                GET_TIME_MS
+    0239    62 Assignment                   0281    63 Assignment                   02CC    64 Assignment               
+    0317    65 Assignment                   0362    66 RETURN                       03B3    68 END                      
+    03BE    72 PUT                          042F    73 PUT                          04A0    74 Assignment               
+    04C0    75 Assignment                   04CC    76 DO                           050E    77 Assignment               
+    0579    78 END                          0584    79 Assignment                   05A4    80 Assignment               
+    062F    82 IF                           0644    82 Assignment                   0655    83 PUT                      
+    071B    84 PUT                          07B5    85 PUT                          0826    88 PUT                      
+    0897    89 PUT                          0908    90 Assignment                   0928    91 Assignment               
+    092E    92 DO                           0970    93 DO                           09B2    94 Assignment               
+    09F0    95 END                          09F8    96 END                          0A03    97 Assignment               
+    0A23    98 Assignment                   0AAE   100 IF                           0AC3   100 Assignment               
+    0AD4   101 PUT                          0B9A   102 PUT                          0C34   103 PUT                      
+    0CA5   105 END                          0CAA   105 Initialization           
+Feb 25, 2025  11:53                         benchmark: proc options(main);                                              
+1.3.2                                  Symbol Table and Cross-Reference Listing                              Page 4     
+A                     38    44    45    52 
+B                     39    43    44    46 
+BENCHMARK              1 
+DELTA                  8    77 
+ELAPSED               15    80    82    83    98   100   101 
+END_TIME              14    79    80    97    98 
+FP_SUM                11    75    77    84 
+GCD                   37    94 
+GET_TIME_MS           56    80    98 
+HOURS                 58    62    66 
+I                     16    76    77    92    94 
+INT_SUM               12    91    94   102 
+J                     17    93    94 
+K                     26    29    30 
+M                      5    77 
+MINUTES               59    63    66 
+MOD                   44    44 
+N                      4    76 
+OK                    41    42    48    50 
+P                      6    92 
+Q                      7    93 
+SECONDS               60    64    66 
+START_TIME            13    74    80    90    98 
+SUBSTR                62    62    63    64    65 
+SUM                   24    27    31    33 
+SYSPRINT              18    72    73    83    84    85    88    89   101   102   103 
+TAYLOR_SIN            21    77 
+TEMP                  40    43    45 
+TERM                  25    28    30    31 
+TERMS                 23    29 
+THOUSANDTHS           61    65    66 
+TIME                  74    74    79    90    97 
+TIME_STR              57    62    63    64    65 
+X                     22    27    28    30 
+
+End of compilation. 
