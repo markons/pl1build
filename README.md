@@ -1,4 +1,4 @@
-<h1>VS Code: configuration for the Iron Spring PL/I compiler</h1>
+<h1>VS Code: a simple IDE for the Iron Spring PL/I compiler</h1>
  
 See also [PL/I on Linux – A Better Way to Learn PL/I](https://www.linkedin.com/pulse/pli-linux-better-way-learn-gabor-markon-lxihf/?trackingId=teeQnykb%2FM%2B0fHgjnJx6Bg%3D%3D) for further information.
 
